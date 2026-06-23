@@ -15,12 +15,12 @@ export const Route = createFileRoute("/")({
 });
 
 type StoredUser = { username: string; email: string; password: string };
-type Theme = "theme-aurora" | "theme-sunset" | "theme-forest";
+type Theme = "theme-aurora" | "theme-nature" | "theme-dark";
 
 const THEMES: { id: Theme; label: string }[] = [
   { id: "theme-aurora", label: "Aurora Night" },
-  { id: "theme-sunset", label: "Sunset Glow" },
-  { id: "theme-forest", label: "Emerald Forest" },
+  { id: "theme-nature", label: "Green Nature" },
+  { id: "theme-dark", label: "Midnight Dark" },
 ];
 
 const USERS_KEY = "quizarena_users";
@@ -169,17 +169,26 @@ function AuthPanel({ onAuthed }: { onAuthed: (username: string) => void }) {
         setError("Fill all fields. Password must be at least 4 characters.");
         return;
       }
-      if (users.some((u) => u.username === username.trim())) {
-        setError("Username already taken.");
+      if (users.some((u) => u.email.toLowerCase() === email.trim().toLowerCase())) {
+        setError("An account with this email already exists.");
         return;
       }
       const next = [...users, { username: username.trim(), email: email.trim(), password }];
       saveUsers(next);
-      setSuccess("Registered successfully! Logging you in…");
-      setTimeout(() => onAuthed(username.trim()), 700);
+      setSuccess("Registered successfully! Please login with your email and password.");
+      // Do NOT auto-login. Switch to login view and prefill email.
+      setTimeout(() => {
+        setMode("login");
+        setUsername("");
+        setPassword("");
+        setSuccess("");
+      }, 1400);
     } else {
-      const found = users.find((u) => u.username === username.trim() && u.password === password);
-      if (!found) { setError("Invalid username or password."); return; }
+      if (!email.trim() || !password) { setError("Enter email and password."); return; }
+      const found = users.find(
+        (u) => u.email.toLowerCase() === email.trim().toLowerCase() && u.password === password
+      );
+      if (!found) { setError("Invalid email or password."); return; }
       setSuccess("Login successful! Loading quiz…");
       setTimeout(() => onAuthed(found.username), 500);
     }
@@ -203,26 +212,26 @@ function AuthPanel({ onAuthed }: { onAuthed: (username: string) => void }) {
       </h2>
       <p className="opacity-80 mb-6 text-sm">
         {mode === "register"
-          ? "Register once — your details are saved on this device for login."
-          : "Use the username and password you registered with."}
+          ? "Register once — then log in with your email and password."
+          : "Use the email and password you registered with."}
       </p>
 
       <form onSubmit={submit} className="space-y-4">
-        <input
-          className="themed-input"
-          placeholder="Username"
-          value={username}
-          onChange={(e) => setUsername(e.target.value)}
-        />
         {mode === "register" && (
           <input
             className="themed-input"
-            type="email"
-            placeholder="Email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
+            placeholder="Username"
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
           />
         )}
+        <input
+          className="themed-input"
+          type="email"
+          placeholder="Email"
+          value={email}
+          onChange={(e) => setEmail(e.target.value)}
+        />
         <input
           className="themed-input"
           type="password"
@@ -235,7 +244,7 @@ function AuthPanel({ onAuthed }: { onAuthed: (username: string) => void }) {
         {success && <div className="text-sm" style={{ color: "#4ade80" }}>{success}</div>}
 
         <button type="submit" className="btn-accent w-full">
-          {mode === "register" ? "Register & Start Quiz" : "Login"}
+          {mode === "register" ? "Register" : "Login"}
         </button>
       </form>
     </div>
